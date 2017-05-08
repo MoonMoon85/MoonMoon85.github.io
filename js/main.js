@@ -1,24 +1,78 @@
-$(document).ready(function() {
-  $(".animsition").animsition({
-    inClass: 'fade-in',
-    outClass: 'fade-out',
-    inDuration: 1500,
-    outDuration: 800,
-    linkElement: '.animsition-link',
-    // e.g. linkElement: 'a:not([target="_blank"]):not([href^="#"])'
-    loading: true,
-    loadingParentElement: 'body', //animsition wrapper element
-    loadingClass: 'animsition-loading',
-    loadingInner: '', // e.g '<img src="loading.svg" />'
-    timeout: false,
-    timeoutCountdown: 5000,
-    onLoadEvent: true,
-    browser: [ 'animation-duration', '-webkit-animation-duration'],
-    // "browser" option allows you to disable the "animsition" in case the css property in the array is not supported by your browser.
-    // The default setting is to disable the "animsition" in a browser that does not support "animation-duration".
-    overlay : false,
-    overlayClass : 'animsition-overlay-slide',
-    overlayParentElement : 'body',
-    transition: function(url){ window.location.href = url; }
-  });
+$(document).ready(function () {
+	$('body').mousemove(function(e){
+	    var amountMovedX = (e.pageX * -1 / 20);
+	    var amountMovedY = (e.pageY * -1 / 20);
+	    $('.background').css('background-position', amountMovedX + 'px ' + amountMovedY + 'px');
+	});
+
+	/**
+     * Start of Barba.js 
+     */
+	Barba.Pjax.start();
+    Barba.Prefetch.init();
+
+    var FadeTransition = Barba.BaseTransition.extend({
+	  	start: function() {
+	    /**
+	     * This function is automatically called as soon the Transition starts
+	     * this.newContainerLoading is a Promise for the loading of the new container
+	     * (Barba.js also comes with an handy Promise polyfill!)
+	     */
+
+	    // As soon the loading is finished and the old page is faded out, let's fade the new page
+	    	Promise
+	      		.all([this.newContainerLoading, this.fadeOut()])
+	      		.then(this.fadeIn.bind(this));
+	  	},
+
+	  	fadeOut: function() {
+	    	/**
+	    	 * this.oldContainer is the HTMLElement of the old Container
+	    	 */
+
+	    	return $(this.oldContainer).animate({ opacity: 0 }).promise();
+	  	},
+
+	  	fadeIn: function() {
+	    	/**
+	     	* this.newContainer is the HTMLElement of the new Container
+	    	 * At this stage newContainer is on the DOM (inside our #barba-container and with visibility: hidden)
+	    	 * Please note, newContainer is available just after newContainerLoading is resolved!
+	     	*/
+	     	document.body.scrollTop = 0;
+		    var _this = this;
+		    var $el = $(this.newContainer);
+
+		    $(this.oldContainer).hide();
+
+		    $el.css({
+		      visibility : 'visible',
+		      opacity : 0
+		    });
+
+		    $el.animate({ opacity: 1 }, 400, function() {
+		      /**
+		       * Do not forget to call .done() as soon your transition is finished!
+		       * .done() will automatically remove from the DOM the old Container
+		       */
+
+		      _this.done();
+		    });
+	   
+		 }
+
+		});
+
+		/**
+		 * Next step, you have to tell Barba to use the new Transition
+		 */
+
+	Barba.Pjax.getTransition = function() {
+		  /**
+		   * Here you can use your own logic!
+		   * For example you can use different Transition based on the current page or link...
+		   */
+
+	  	return FadeTransition;
+	};
 });
